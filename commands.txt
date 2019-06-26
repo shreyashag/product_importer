@@ -1,0 +1,2 @@
+npm run --prefix front_end start
+pipenv run gunicorn api.app:app --worker-class gevent --bind 127.0.0.1:5000
