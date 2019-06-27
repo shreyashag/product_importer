@@ -68,8 +68,8 @@ def upload_product_csv_records(csv_records):
         sse.publish(
             {
                 "message": "Total:" + str(index + 1) + "/" + str(total_records),
-                "total": str(total_records),
-                "completed": str(index + 1),
+                "total": total_records,
+                "completed": index + 1,
             }
         )
         connection.commit()

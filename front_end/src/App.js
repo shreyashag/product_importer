@@ -7,23 +7,9 @@ import axios from "axios";
 
 const HEAD_URL = "http://localhost:5000/";
 
-function FileUploadProgress(props) {
-  if (props.completed == 0 && props.total == 0) {
-    return <h1>No Upload in progress</h1>;
-  } else {
-    return (
-      <h1>
-        Completed: {props.completed} Total {props.total}
-      </h1>
-    );
-  }
-}
 
-function Greeting(props) {
-  const total = props.total;
-  const completed = props.completed;
-  return <FileUploadProgress total={total} completed={completed} />;
-}
+
+
 
 //function to sort the results
 function filterCaseInsensitive(filter, row) {
@@ -46,6 +32,25 @@ export default class ProductList extends React.Component {
     this.eventSource = new EventSource(HEAD_URL + "events");
   }
 
+  FileUploadProgress = () => {
+    console.log(this.state);
+    if (this.state.completed === 0 && this.state.total === 0) {
+      return <h1>No Upload in progress</h1>;
+    } else {
+      return (
+        <h1>
+          Completed: {this.state.completed} Total {this.state.total}
+        </h1>
+      );
+    }
+  }
+
+  Greeting = () =>{
+    const total = this.state.total;
+    const completed = this.state.completed;
+    return <this.FileUploadProgress total={total} completed={completed} />;
+  }
+
   update_product_list() {
     axios.get(HEAD_URL + "product").then(res => {
       const products = res.data;
@@ -55,11 +60,18 @@ export default class ProductList extends React.Component {
 
   update_product_event_message(e) {
     let obj = JSON.parse(e.data);
-    this.setState({
-      total: obj.total,
-      completed: obj.completed
-    });
-    if (obj.total > 0 && obj.completed > 0 && obj.completed == obj.total) {
+    if ((obj.total !== 0) && (this.state.total===0)){
+      this.setState({
+        total: obj.total,
+      });  
+    }
+    if (Number.isInteger(obj.completed/100) === true){
+      this.setState({
+        completed: obj.completed
+      });
+    }
+    
+    if ((obj.total > 0 && obj.completed > 0) && (obj.completed === obj.total)) {
       this.update_product_list();
       this.setState({
         total: 0,
@@ -179,8 +191,7 @@ export default class ProductList extends React.Component {
             Delete All
           </button>
           <div>
-            <Greeting
-              fileUploading={this.state.fileUploading}
+            <this.Greeting
               total={this.state.total}
               completed={this.state.completed}
             />
