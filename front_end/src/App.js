@@ -8,22 +8,21 @@ import axios from "axios";
 const HEAD_URL = "http://localhost:5000/";
 
 function FileUploadProgress(props) {
-  return <h1>Upload status {props.uploadProgress}</h1>;
-}
-
-function NoFileUploadProgress(props) {
-  return <h1>No Upload in progress</h1>;
+  if (props.completed == 0 && props.total == 0) {
+    return <h1>No Upload in progress</h1>;
+  } else {
+    return (
+      <h1>
+        Completed: {props.completed} Total {props.total}
+      </h1>
+    );
+  }
 }
 
 function Greeting(props) {
-  // const fileUploading = this.state.fileUploading;
-  const fileUploading = props.fileUploading;
-  const uploadProgress = props.uploadProgress;
-  if (fileUploading) {
-    return <FileUploadProgress uploadProgress={uploadProgress} />;
-  } else {
-    return <NoFileUploadProgress />;
-  }
+  const total = props.total;
+  const completed = props.completed;
+  return <FileUploadProgress total={total} completed={completed} />;
 }
 
 //function to sort the results
@@ -38,8 +37,8 @@ export default class ProductList extends React.Component {
   state = {
     products: [],
     selectedFile: null,
-    fileUploading: false,
-    uploadProgress: "None"
+    total: 0,
+    completed: 0
   };
 
   constructor(props) {
@@ -55,18 +54,26 @@ export default class ProductList extends React.Component {
   }
 
   update_product_event_message(e) {
-    let message = JSON.parse(e.data).message;
+    let obj = JSON.parse(e.data);
     this.setState({
-      uploadProgress: message
+      total: obj.total,
+      completed: obj.completed
     });
+    if (obj.total > 0 && obj.completed > 0 && obj.completed == obj.total) {
+      this.update_product_list();
+      this.setState({
+        total: 0,
+        completed: 0
+      });
+    }
   }
 
   componentDidMount() {
     this.setState({
       products: [],
       selectedFile: null,
-      fileUploading: false,
-      uploadProgress: "None"
+      total: 0,
+      completed: 0
     });
     this.update_product_list();
     this.eventSource.onmessage = e => this.update_product_event_message(e);
@@ -82,13 +89,13 @@ export default class ProductList extends React.Component {
   onUploadClickHandler = () => {
     const data = new FormData();
     this.setState({
-      fileUploading: true
+      // fileUploading: true
     });
     data.append("file", this.state.selectedFile);
     axios.post(HEAD_URL + "product", data, {}).then(res => {
       // then print response status
       this.setState({
-        fileUploading: false
+        // fileUploading: false
       });
       this.update_product_list();
     });
@@ -106,6 +113,24 @@ export default class ProductList extends React.Component {
       });
   };
 
+  // renderEditable(cellInfo) {
+  //   return (
+  //     <div
+  //       style={{ backgroundColor: "#fafafa" }}
+  //       contentEditable
+  //       suppressContentEditableWarning
+  //       onBlur={e => {
+  //         const data = [...this.state.data];
+  //         data[cellInfo.index][cellInfo.column.id] = e.target.innerHTML;
+  //         this.setState({ data });
+  //       }}
+  //       dangerouslySetInnerHTML={{
+  //         __html: this.state.data[cellInfo.index][cellInfo.column.id]
+  //       }}
+  //     />
+  //   );
+  //  }
+
   render() {
     const columns = [
       {
@@ -115,10 +140,12 @@ export default class ProductList extends React.Component {
       {
         Header: "Name",
         accessor: "name"
+        // Cell: this.renderEditable
       },
       {
         Header: "Description",
         accessor: "description"
+        // Cell: this.renderEditable
       }
     ];
     return (
@@ -154,7 +181,8 @@ export default class ProductList extends React.Component {
           <div>
             <Greeting
               fileUploading={this.state.fileUploading}
-              uploadProgress={this.state.uploadProgress}
+              total={this.state.total}
+              completed={this.state.completed}
             />
           </div>
         </div>

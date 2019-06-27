@@ -17,6 +17,8 @@ flask-sse = "*"
 gunicorn = "*"
 gevent = "*"
 flask-cors = "*"
+flask-dramatiq = "*"
+pika = "*"
 
 [requires]
 python_version = "3.7"
