@@ -9,7 +9,7 @@ from flask_restful import Api, Resource
 import requests
 from models import Product, db, get_connection, Webhook
 from tasks import flask_dramatiq_obj
-
+import random
 from flask_sse import sse
 
 
@@ -24,18 +24,21 @@ def upload_product_csv_records(csv_records):
     cursor = connection.cursor()
     for index, product_dict in enumerate(csv_records):
         sql_statement = """
-        INSERT INTO product (sku, name, description)
-        VALUES (%s,%s,%s)
+        INSERT INTO product (sku, name, description, active)
+        VALUES (%s,%s,%s, %s)
         ON DUPLICATE KEY UPDATE
         name=%s,
-        description=%s;
+        description=%s,
+        active=%s;
         """
         params = (
             product_dict["sku"],
             product_dict["name"],
             product_dict["description"],
+            random.choice([0, 1]),
             product_dict["name"],
             product_dict["description"],
+            random.choice([0, 1])
         )
         cursor.execute(sql_statement, params)
         sse.publish(
@@ -95,15 +98,21 @@ class ProductResource(Resource):
             connection = get_connection()
             name = request_body["name"]
             description = request_body["description"]
+            active = request_body["active"]
+            if active is True:
+                active = 1
+            elif active is False:
+                active = 0
             cursor = connection.cursor()
             sql_statement = """
             UPDATE product 
             SET
             name=%s,
+            active=%s,
             description=%s
             WHERE sku=%s;
             """
-            params = (name, description, sku)
+            params = (name, active, description, sku)
             cursor.execute(sql_statement, params)
             connection.commit()
             connection.close()
@@ -125,23 +134,27 @@ class ProductResource(Resource):
         request_body = request.json
         connection = get_connection()
         name = request_body["name"]
+        active = request_body["active"]
         description = request_body["description"]
         sku = request_body["sku"]
 
         cursor = connection.cursor()
         sql_statement = """
-        INSERT INTO product (sku, name, description)
-        VALUES (%s,%s,%s)
+        INSERT INTO product (sku, name, description, active)
+        VALUES (%s,%s,%s, %s)
         ON DUPLICATE KEY UPDATE
         name=%s,
-        description=%s;
+        description=%s,
+        active=%s;
         """
         params = (
             request_body["sku"],
             request_body["name"],
             request_body["description"],
+            request_body["active"],
             request_body["name"],
             request_body["description"],
+            request_body["active"],
         )
         cursor.execute(sql_statement, params)
         connection.commit()

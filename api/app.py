@@ -10,6 +10,7 @@ from tasks import flask_dramatiq_obj
 
 from dramatiq.brokers.redis import RedisBroker
 import os
+import random
 
 
 def create_app():

@@ -136,7 +136,11 @@ export default class ProductList extends React.Component {
   }
 
   handleUpdate(row) {
-    var jsonPostBody = { name: row.name, description: row.description };
+    var jsonPostBody = {
+      name: row.name,
+      description: row.description,
+      active: row.active
+    };
     axios.post(HEAD_URL + "product/" + row.sku, jsonPostBody, {}).then(res => {
       // then print response status
       if (res.status === 200) {
@@ -173,6 +177,12 @@ export default class ProductList extends React.Component {
       {
         Header: "Description",
         accessor: "description",
+        Cell: this.renderEditable
+      },
+      {
+        Header: "Active",
+        id: "active",
+        accessor: d => String(d.active),
         Cell: this.renderEditable
       },
       {
