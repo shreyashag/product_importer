@@ -124,6 +124,9 @@ class ProductResource(Resource):
     def put(self):
         request_body = request.json
         connection = get_connection()
+        name = request_body["name"]
+        description = request_body["description"]
+        sku = request_body["sku"]
 
         cursor = connection.cursor()
         sql_statement = """
@@ -149,7 +152,7 @@ class ProductResource(Resource):
         for item in webhooks:
             if item.url.startswith("http://requestbin"):
                 r = requests.post(
-                    url,
+                    item.url,
                     data={
                         "message": f"Product with sku {sku} "
                         f"added, name is {name} and description is {description}."

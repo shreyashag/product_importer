@@ -34,7 +34,7 @@ export default class NewRecordComponent extends React.Component {
       description: this.state.description
     };
     event.preventDefault();
-    axios.put(HEAD_URL + "product", jsonPostBody, {}).then(res => {
+    axios.put(HEAD_URL + "product/", jsonPostBody, {}).then(res => {
       // then print response status
       if (res.status === 200) {
         alert("Record upserted into the database correctly");
