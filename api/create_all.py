@@ -1,4 +1,4 @@
-from api.app import app, db
+from app import app, db
 
 if __name__ == "__main__":
     app.app_context().push()

@@ -1,0 +1,36 @@
+# Dockerfile
+FROM python:3.6 as build
+
+# Set an environment variable with the directory where we'll be running the app
+WORKDIR /code
+
+# # Setup SSH Key
+# ARG SSH_PRIVATE_KEY
+# RUN mkdir /root/.ssh/
+# RUN echo "$SSH_PRIVATE_KEY" >> /root/.ssh/id_rsa && chmod 600 /root/.ssh/id_rsa
+# RUN echo /root/.ssh.id_rsa
+# RUN touch /root/.ssh/known_hosts
+# RUN ssh-keyscan github.com >> /root/.ssh/known_hosts
+
+RUN pip3 install pipenv
+
+# Copy the Pipfile in order to install Python dependencies
+COPY Pipfile /
+
+# Install Python dependencies with system as pipenv run will use system python
+RUN pipenv install --skip-lock --system
+
+# Remove SSH keys
+# RUN rm -rf /root/.ssh/
+
+FROM build
+
+# We copy the rest of the codebase into the image
+RUN rm -rf /code
+COPY . /code
+
+# Expose the port nginx will listen on
+EXPOSE 5000
+
+# pipenv run gunicorn api.app:app --worker-class gevent --bind 127.0.0.1:5000
+CMD ["gunicorn", "-b", "0.0.0.0:5000" , "app:app", "-w", "4", "--worker-class", "gevent"]

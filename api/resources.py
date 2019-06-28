@@ -7,8 +7,8 @@ from flask import request, jsonify
 from flask_restful import Api, Resource
 
 import requests
-from api.models import Product, db, get_connection, Webhook
-from api.tasks import flask_dramatiq_obj
+from models import Product, db, get_connection, Webhook
+from tasks import flask_dramatiq_obj
 
 from flask_sse import sse
 
