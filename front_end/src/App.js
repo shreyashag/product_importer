@@ -8,7 +8,7 @@ import NewRecordComponent from "./NewRecordComponent";
 import WebHookList from "./WebHookList";
 import NewWebhookComponent from "./NewWebhookComponent";
 
-const HEAD_URL = "http://localhost:5000/";
+const HEAD_URL = "http://139.59.60.234:5000/";
 
 //function to sort the results
 function filterCaseInsensitive(filter, row) {

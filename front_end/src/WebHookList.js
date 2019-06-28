@@ -3,7 +3,7 @@ import ReactTable from "react-table";
 import "react-table/react-table.css";
 
 import axios from "axios";
-const HEAD_URL = "http://localhost:5000/";
+const HEAD_URL = "http://139.59.60.234:5000/";
 export default class WebHookList extends React.Component {
   state = {
     products: []
