@@ -32,12 +32,12 @@ def upload_product_csv_records(csv_records):
         active=%s;
         """
         params = (
-            product_dict["sku"],
-            product_dict["name"],
-            product_dict["description"],
+            product_dict["sku"].strip(),
+            product_dict["name"].strip(),
+            product_dict["description"].strip(),
             random.choice([0, 1]),
-            product_dict["name"],
-            product_dict["description"],
+            product_dict["name"].strip(),
+            product_dict["description"].strip(),
             random.choice([0, 1])
         )
         cursor.execute(sql_statement, params)
@@ -96,9 +96,9 @@ class ProductResource(Resource):
         else:
             request_body = request.json
             connection = get_connection()
-            name = request_body["name"]
-            description = request_body["description"]
-            active = request_body["active"]
+            name = request_body["name"].strip()
+            description = request_body["description"].strip()
+            active = request_body["active"].strip()[0]
             if active is True:
                 active = 1
             elif active is False:
@@ -133,10 +133,10 @@ class ProductResource(Resource):
     def put(self):
         request_body = request.json
         connection = get_connection()
-        name = request_body["name"]
-        active = request_body["active"]
-        description = request_body["description"]
-        sku = request_body["sku"]
+        name = request_body["name"].strip()
+        active = request_body["active"].strip()
+        description = request_body["description"].strip()
+        sku = request_body["sku"].strip()
 
         cursor = connection.cursor()
         sql_statement = """
@@ -151,10 +151,10 @@ class ProductResource(Resource):
             request_body["sku"],
             request_body["name"],
             request_body["description"],
-            request_body["active"],
+            request_body["active"][0],
             request_body["name"],
             request_body["description"],
-            request_body["active"],
+            request_body["active"][0],
         )
         cursor.execute(sql_statement, params)
         connection.commit()
