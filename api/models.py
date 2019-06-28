@@ -22,6 +22,7 @@ class Product(db.Model):
     name = db.Column(db.String(80), nullable=False)
     sku = db.Column(db.String(80), unique=True, nullable=False)
     description = db.Column(db.String(1024), nullable=False)
+    active = db.Column(db.Boolean, nullable=False)
 
     def __repr__(self):
         return "<Product %r>" % self.id

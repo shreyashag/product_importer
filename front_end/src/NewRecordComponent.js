@@ -9,11 +9,12 @@ const HEAD_URL = "http://139.59.60.234:5000/";
 export default class NewRecordComponent extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { sku: "", name: "", description: "" };
+    this.state = { sku: "", name: "", description: "", active: false };
 
     this.handleChangeSku = this.handleChangeSku.bind(this);
     this.handleChangeName = this.handleChangeName.bind(this);
     this.handleChangeDescription = this.handleChangeDescription.bind(this);
+    this.handleChangeActive = this.handleChangeActive.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
@@ -26,12 +27,16 @@ export default class NewRecordComponent extends React.Component {
   handleChangeDescription(event) {
     this.setState({ description: event.target.value });
   }
+  handleChangeActive(event) {
+    this.setState({ active: event.target.value });
+  }
 
   handleSubmit(event) {
     var jsonPostBody = {
       sku: this.state.sku,
       name: this.state.name,
-      description: this.state.description
+      description: this.state.description,
+      active: this.state.active
     };
     event.preventDefault();
     axios.put(HEAD_URL + "product/", jsonPostBody, {}).then(res => {
@@ -41,7 +46,8 @@ export default class NewRecordComponent extends React.Component {
         this.setState({
           sku: "",
           name: "",
-          description: ""
+          description: "",
+          active: false
         });
       }
 
@@ -75,6 +81,14 @@ export default class NewRecordComponent extends React.Component {
             type="text"
             value={this.state.description}
             onChange={this.handleChangeDescription}
+          />
+        </label>
+        <label>
+          Active:
+          <input
+            type="checkbox"
+            value={this.state.active}
+            onChange={this.handleChangeActive}
           />
         </label>
         <input type="submit" value="Submit" />
