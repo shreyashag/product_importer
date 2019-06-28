@@ -96,9 +96,9 @@ class ProductResource(Resource):
         else:
             request_body = request.json
             connection = get_connection()
-            name = request_body["name"].strip()
-            description = request_body["description"].strip()
-            active = request_body["active"].strip()[0]
+            name = str(request_body["name"]).strip()
+            description = str(request_body["description"]).strip()
+            active = str(request_body["active"]).strip()[0]
             if active is True:
                 active = 1
             elif active is False:
@@ -133,10 +133,10 @@ class ProductResource(Resource):
     def put(self):
         request_body = request.json
         connection = get_connection()
-        name = request_body["name"].strip()
-        active = request_body["active"].strip()
-        description = request_body["description"].strip()
-        sku = request_body["sku"].strip()
+        name = str(request_body["name"]).strip()
+        active = str(request_body["active"]).strip()
+        description str(= request_body["description"]).strip()
+        sku = str(request_body["sku"]).strip()
 
         cursor = connection.cursor()
         sql_statement = """
