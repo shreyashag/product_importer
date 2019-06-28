@@ -4,13 +4,11 @@ import "react-table/react-table.css";
 import React from "react";
 
 import axios from "axios";
-import NewRecordComponent from "./NewRecordComponent"
+import NewRecordComponent from "./NewRecordComponent";
+import WebHookList from "./WebHookList";
+import NewWebhookComponent from "./NewWebhookComponent";
 
 const HEAD_URL = "http://localhost:5000/";
-
-
-
-
 
 //function to sort the results
 function filterCaseInsensitive(filter, row) {
@@ -31,10 +29,10 @@ export default class ProductList extends React.Component {
   constructor(props) {
     super(props);
     this.eventSource = new EventSource(HEAD_URL + "events");
+    this.renderEditable = this.renderEditable.bind(this);
   }
 
   FileUploadProgress = () => {
-    console.log(this.state);
     if (this.state.completed === 0 && this.state.total === 0) {
       return <h1>No Upload in progress</h1>;
     } else {
@@ -44,16 +42,16 @@ export default class ProductList extends React.Component {
         </h1>
       );
     }
-  }
+  };
 
-  Greeting = () =>{
+  Greeting = () => {
     const total = this.state.total;
     const completed = this.state.completed;
     return <this.FileUploadProgress total={total} completed={completed} />;
-  }
+  };
 
   update_product_list() {
-    axios.get(HEAD_URL + "product").then(res => {
+    axios.get(HEAD_URL + "product/").then(res => {
       const products = res.data;
       this.setState({ products });
     });
@@ -61,18 +59,18 @@ export default class ProductList extends React.Component {
 
   update_product_event_message(e) {
     let obj = JSON.parse(e.data);
-    if ((obj.total !== 0) && (this.state.total===0)){
+    if (obj.total !== 0 && this.state.total === 0) {
       this.setState({
-        total: obj.total,
-      });  
+        total: obj.total
+      });
     }
-    if (Number.isInteger(obj.completed/100) === true){
+    if (Number.isInteger(obj.completed / 100) === true) {
       this.setState({
         completed: obj.completed
       });
     }
-    
-    if ((obj.total > 0 && obj.completed > 0) && (obj.completed === obj.total)) {
+
+    if (obj.total > 0 && obj.completed > 0 && obj.completed === obj.total) {
       this.update_product_list();
       this.setState({
         total: 0,
@@ -100,53 +98,66 @@ export default class ProductList extends React.Component {
   };
 
   onUpdateListHandler = event => {
-    this.update_product_list()
+    this.update_product_list();
   };
 
   onUploadClickHandler = () => {
     const data = new FormData();
-    this.setState({
-      // fileUploading: true
-    });
+    this.setState({});
     data.append("file", this.state.selectedFile);
-    axios.post(HEAD_URL + "product", data, {}).then(res => {
-      // then print response status
-      this.setState({
-        // fileUploading: false
-      });
+    axios.post(HEAD_URL + "product/", data, {}).then(res => {
+      this.setState({});
       this.update_product_list();
     });
   };
 
   onDeleteClickHandler = () => {
-    axios
-      .delete(HEAD_URL + "product", {
-        // receive two    parameter endpoint url ,form data
-      })
-      .then(res => {
-        // then print response status
-        // console.log(res.statusText)
-        this.update_product_list();
-      });
+    axios.delete(HEAD_URL + "product/", {}).then(res => {
+      this.update_product_list();
+    });
   };
 
-  // renderEditable(cellInfo) {
-  //   return (
-  //     <div
-  //       style={{ backgroundColor: "#fafafa" }}
-  //       contentEditable
-  //       suppressContentEditableWarning
-  //       onBlur={e => {
-  //         const data = [...this.state.data];
-  //         data[cellInfo.index][cellInfo.column.id] = e.target.innerHTML;
-  //         this.setState({ data });
-  //       }}
-  //       dangerouslySetInnerHTML={{
-  //         __html: this.state.data[cellInfo.index][cellInfo.column.id]
-  //       }}
-  //     />
-  //   );
-  //  }
+  renderEditable(cellInfo) {
+    return (
+      <div
+        style={{ backgroundColor: "#fafafa" }}
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={e => {
+          const products = [...this.state.products];
+          products[cellInfo.index][cellInfo.column.id] = e.target.innerHTML;
+          this.setState({ products });
+        }}
+        dangerouslySetInnerHTML={{
+          __html: this.state.products[cellInfo.index][cellInfo.column.id]
+        }}
+      />
+    );
+  }
+
+  handleUpdate(row) {
+    var jsonPostBody = { name: row.name, description: row.description };
+    axios.post(HEAD_URL + "product/" + row.sku, jsonPostBody, {}).then(res => {
+      // then print response status
+      if (res.status === 200) {
+        this.update_product_list();
+        alert("Product Updated in the database");
+      }
+
+      // this.update_product_list();
+    });
+  }
+  handleDelete(row) {
+    axios.delete(HEAD_URL + "product/" + row.sku, {}).then(res => {
+      // then print response status
+      if (res.status === 200) {
+        this.update_product_list();
+        alert("Product Deleted from Database");
+      }
+
+      // this.update_product_list();
+    });
+  }
 
   render() {
     const columns = [
@@ -156,18 +167,39 @@ export default class ProductList extends React.Component {
       },
       {
         Header: "Name",
-        accessor: "name"
-        // Cell: this.renderEditable
+        accessor: "name",
+        Cell: this.renderEditable
       },
       {
         Header: "Description",
-        accessor: "description"
-        // Cell: this.renderEditable
+        accessor: "description",
+        Cell: this.renderEditable
+      },
+      {
+        Header: "",
+        Cell: row => (
+          <div>
+            <button onClick={() => this.handleUpdate(row.original)}>
+              Update
+            </button>
+            <button onClick={() => this.handleDelete(row.original)}>
+              Delete
+            </button>
+          </div>
+        )
       }
     ];
     return (
       <div>
+        <NewWebhookComponent />
+        <WebHookList />
+        <NewRecordComponent />
         <div>
+          <br />
+          <br />
+          <br />
+          {/* <Products/> */}
+          <h1>Product List</h1>
           <ReactTable
             filterable
             defaultFilterMethod={(filter, row) =>
@@ -209,7 +241,6 @@ export default class ProductList extends React.Component {
             />
           </div>
         </div>
-        <NewRecordComponent/>
       </div>
     );
   }
