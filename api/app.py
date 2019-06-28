@@ -3,10 +3,10 @@ from flask_cors import CORS
 from flask_restful import Api
 from flask_sse import sse
 
-from api.models import db
-from api.resources import ProductResource
-from api.webhooks import WebhookResource
-from api.tasks import flask_dramatiq_obj
+from models import db
+from resources import ProductResource
+from webhooks import WebhookResource
+from tasks import flask_dramatiq_obj
 
 from dramatiq.brokers.redis import RedisBroker
 import os
@@ -14,7 +14,7 @@ import os
 
 def create_app():
     app = Flask(__name__)
-    app.config["REDIS_URL"] = "redis://localhost"
+    app.config["REDIS_URL"] = "redis://" + os.environ['REDIS_HOST']
     app.config["SQLALCHEMY_DATABASE_URI"] = (
         "mysql+pymysql://"
         + os.environ["DB_USERNAME"]

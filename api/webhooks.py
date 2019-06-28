@@ -7,7 +7,7 @@ from flask import request, jsonify
 from flask_restful import Api, Resource
 
 
-from api.models import Webhook, db, get_connection
+from models import Webhook, db, get_connection
 
 
 class WebhookResource(Resource):
