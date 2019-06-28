@@ -135,7 +135,7 @@ class ProductResource(Resource):
         connection = get_connection()
         name = str(request_body["name"]).strip()
         active = str(request_body["active"]).strip()
-        description str(= request_body["description"]).strip()
+        description = str(request_body["description"]).strip()
         sku = str(request_body["sku"]).strip()
 
         cursor = connection.cursor()
