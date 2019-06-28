@@ -95,6 +95,37 @@ class ProductResource(Resource):
         reader = csv.DictReader(stream)
         unique_records = [dict(y) for y in set(tuple(x.items()) for x in reader)]
         upload_product_csv_records.send(unique_records)
+    
+    def put(self):
+        request_body = request.json
+        connection = pymysql.connect(
+        host="localhost",
+        user="root",
+        port=3308,
+        password="",
+        db="PRODUCT",
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+
+        cursor = connection.cursor()
+        sql_statement = """
+        INSERT INTO product (sku, name, description)
+        VALUES (%s,%s,%s)
+        ON DUPLICATE KEY UPDATE
+        name=%s,
+        description=%s;
+        """
+        params = (
+            request_body["sku"],
+            request_body["name"],
+            request_body["description"],
+            request_body["name"],
+            request_body["description"],
+        )
+        cursor.execute(sql_statement, params)
+        connection.commit()
+        connection.close()
 
     def delete(self):
         try:

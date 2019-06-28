@@ -4,6 +4,7 @@ import "react-table/react-table.css";
 import React from "react";
 
 import axios from "axios";
+import NewRecordComponent from "./NewRecordComponent"
 
 const HEAD_URL = "http://localhost:5000/";
 
@@ -98,6 +99,10 @@ export default class ProductList extends React.Component {
     });
   };
 
+  onUpdateListHandler = event => {
+    this.update_product_list()
+  };
+
   onUploadClickHandler = () => {
     const data = new FormData();
     this.setState({
@@ -190,6 +195,13 @@ export default class ProductList extends React.Component {
           >
             Delete All
           </button>
+          <button
+            type="button"
+            className="btn btn-error btn-block"
+            onClick={this.onUpdateListHandler}
+          >
+            Update List
+          </button>
           <div>
             <this.Greeting
               total={this.state.total}
@@ -197,6 +209,7 @@ export default class ProductList extends React.Component {
             />
           </div>
         </div>
+        <NewRecordComponent/>
       </div>
     );
   }
