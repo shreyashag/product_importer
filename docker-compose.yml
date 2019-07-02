@@ -1,0 +1,77 @@
+version: "3"
+services:
+  api:
+    image: api:latest
+    # build:
+    #   context: api
+    #   dockerfile: Dockerfile-api
+    ports:
+      - "5000:5000"
+    expose:
+      # Opens port 3306 on the container
+      - "5000"
+    depends_on:
+      - db
+      - redis
+    links:
+      - "db:database"
+      - "redis"
+    env_file:
+      - docker-envrc
+    restart: always
+
+  worker:
+    image: api:latest
+    # build:
+    #   context: api
+    #   dockerfile: Dockerfile-api
+    depends_on:
+      - db
+      - redis
+    links:
+      - "db:database"
+      - "redis"
+    env_file:
+      - docker-envrc
+    restart: always
+    command: "flask worker --processes=1"
+
+  front-end:
+    image: front-end:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile-front-end
+    ports:
+      - "8080:80"
+    restart: always
+
+  redis:
+    image: "redis:alpine"
+    restart: always
+    expose:
+      # Opens port 6379 on the container
+      - "6379"
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: "db"
+      # So you don't have to use root, but you can if you like
+      MYSQL_USER: "user"
+      # You can use whatever password you like
+      MYSQL_PASSWORD: "password"
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: "password"
+    # ports:
+    #   # <Port exposed> : < MySQL Port running inside container>
+    #   - "3306:3306"
+    expose:
+      # Opens port 3306 on the container
+      - "3306"
+      # Where our data will be persisted
+    volumes:
+      - my-db:/var/lib/mysql
+
+# Names our volume
+volumes:
+  my-db:
