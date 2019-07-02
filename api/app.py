@@ -1,21 +1,23 @@
+import os
+
+from dramatiq.brokers.redis import RedisBroker
 from flask import Flask
 from flask_cors import CORS
 from flask_restful import Api
 from flask_sse import sse
-
 from models import db
 from resources import ProductResource
-from webhooks import WebhookResource
 from tasks import flask_dramatiq_obj
-
-from dramatiq.brokers.redis import RedisBroker
-import os
-import random
+from webhooks import WebhookResource
 
 
 def create_app():
+    """
+    This is the factory function to initialise the application
+    :return: flask application
+    """
     app = Flask(__name__)
-    app.config["REDIS_URL"] = "redis://" + os.environ['REDIS_HOST']
+    app.config["REDIS_URL"] = "redis://" + os.environ["REDIS_HOST"]
     app.config["SQLALCHEMY_DATABASE_URI"] = (
         "mysql+pymysql://"
         + os.environ["DB_USERNAME"]

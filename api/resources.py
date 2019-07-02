@@ -1,59 +1,23 @@
 import csv
 import io
-import os
-import pymysql
-import sqlalchemy
-from flask import request, jsonify
-from flask_restful import Api, Resource
 
-import requests
-from models import Product, db, get_connection, Webhook
-from tasks import flask_dramatiq_obj
-import random
-from flask_sse import sse
-
-
-@flask_dramatiq_obj.actor()
-def upload_product_csv_records(csv_records):
-
-    total_records = len(csv_records)
-
-    total_added = 0
-    connection = get_connection()
-
-    cursor = connection.cursor()
-    for index, product_dict in enumerate(csv_records):
-        sql_statement = """
-        INSERT INTO product (sku, name, description, active)
-        VALUES (%s,%s,%s, %s)
-        ON DUPLICATE KEY UPDATE
-        name=%s,
-        description=%s,
-        active=%s;
-        """
-        params = (
-            product_dict["sku"].strip(),
-            product_dict["name"].strip(),
-            product_dict["description"].strip(),
-            random.choice([0, 1]),
-            product_dict["name"].strip(),
-            product_dict["description"].strip(),
-            random.choice([0, 1])
-        )
-        cursor.execute(sql_statement, params)
-        sse.publish(
-            {
-                "message": "Total:" + str(index + 1) + "/" + str(total_records),
-                "total": total_records,
-                "completed": index + 1,
-            }
-        )
-        connection.commit()
-    connection.close()
+from flask import jsonify, request
+from flask_restful import Resource
+from models import Product, db, get_connection
+from tasks import trigger_webhooks, upload_product_csv_records
 
 
 class ProductResource(Resource):
-    def get(self):
+    """
+    The Product Resource is used to handle all operations related to Product
+    """
+
+    @staticmethod
+    def get() -> object:
+        """
+        The GET method is used to return a list of all the products present in the database
+        :return: list of products in json
+        """
         connection = get_connection()
 
         with connection.cursor() as cursor:
@@ -63,35 +27,37 @@ class ProductResource(Resource):
             cursor.execute(sql_statement)
             result = cursor.fetchall()
         connection.close()
-        return result
+
         # Using pymysql fetch as it is faster that loading SQLAlchemy objects
         # SQLAlchemy method is commented out
 
         # products = Product.query.all()
-        # return_json = []
+        # result = []
         # for item in products:
-        #     return_json.append({'id':item.id, 'sku':item.sku, 'name':item.name, 'description':item.description})
+        #     result.append({'id':item.id, 'sku':item.sku, 'name':item.name, 'description':item.description})
 
-        # return return_json
+        return result
 
-    def post(self, sku=None):
+    @staticmethod
+    def post(sku=None):
+        """
+        POST method is used for creating/updating the product records.
+        If sku is none, then assumes that a CSV file with records is present in the request body.
+        If sku is given tries to create/update a record with the given sku.
+        :param sku:
+        :return:
+        """
         if sku is None:
+            # If sku is None, assume file is present in the request
             file = request.files["file"]
+
+            # Read the CSV file and get unique records from it
             stream = io.StringIO(file.stream.read().decode("UTF8"))
             reader = csv.DictReader(stream)
             unique_records = [dict(y) for y in set(tuple(x.items()) for x in reader)]
+            # Send the list of records to worker for processing
             upload_product_csv_records.send(unique_records)
-            webhooks = Webhook.query.all()
-            for item in webhooks:
-                if item.url.startswith("http://requestbin"):
-                    r = requests.post(
-                        item.url,
-                        data={
-                            "message": "CSV File uploaded with "
-                            + str(len(unique_records))
-                            + " records"
-                        },
-                    )
+            trigger_webhooks.send("CSV Upload in progress!")
 
         else:
             request_body = request.json
@@ -116,21 +82,20 @@ class ProductResource(Resource):
             cursor.execute(sql_statement, params)
             connection.commit()
             connection.close()
-
-            webhooks = Webhook.query.all()
-            for item in webhooks:
-                if item.url.startswith("http://requestbin"):
-                    r = requests.post(
-                        item.url,
-                        data={
-                            "message": f"Product with sku {sku} "
-                            f"updated, name is {name} and description is {description}."
-                        },
-                    )
+            trigger_webhooks.send(
+                f"Product with sku {sku} "
+                f"updated, name is {name} and description is {description}."
+            )
 
         return jsonify({"message": "Success"})
 
-    def put(self):
+    @staticmethod
+    def put():
+        """
+        The PUT method is invoked for inserting an individual record into the database.
+        In case of item with the same SKU already existing, the existing item is updated with
+        the given form parameters.
+        """
         request_body = request.json
         connection = get_connection()
         name = str(request_body["name"]).strip()
@@ -147,71 +112,39 @@ class ProductResource(Resource):
         description=%s,
         active=%s;
         """
-        params = (
-            request_body["sku"],
-            request_body["name"],
-            request_body["description"],
-            request_body["active"][0],
-            request_body["name"],
-            request_body["description"],
-            request_body["active"][0],
-        )
+        params = (sku, name, description, active, name, description, active)
         cursor.execute(sql_statement, params)
         connection.commit()
 
         connection.close()
-
-        webhooks = Webhook.query.all()
-        for item in webhooks:
-            if item.url.startswith("http://requestbin"):
-                r = requests.post(
-                    item.url,
-                    data={
-                        "message": f"Product with sku {sku} "
-                        f"added, name is {name} and description is {description}."
-                    },
-                )
+        trigger_webhooks.send(
+            f"Product with sku {sku} "
+            f"added, name is {name} and description is {description}."
+        )
         return jsonify({"message": "Success"})
 
-    def delete(self, sku=None):
-        webhooks = Webhook.query.all()
+    @staticmethod
+    def delete(sku=None):
+        """
+        The
+        :param sku: Optional parameter. If sku is None, then all the records are deleted.
+        If sku is provided, only deletes the item with given sku.
+        :return:
+        """
         if sku is None:
             try:
-                num_rows_deleted = db.session.query(Product).delete()
+                db.session.query(Product).delete()
                 db.session.commit()
             except:
                 db.session.rollback()
-            for item in webhooks:
-                if item.url.startswith("http://requestbin"):
-                    r = requests.post(
-                        item.url, data={"message": f"Deleted all products!"}
-                    )
+            trigger_webhooks.send(f"Deleted all products!")
         else:
             try:
                 Product.query.filter_by(sku=sku).delete()
                 db.session.commit()
             except Exception as e:
-                raise e
                 db.session.rollback()
-            for item in webhooks:
-                if item.url.startswith("http://requestbin"):
-                    r = requests.post(
-                        item.url, data={"message": f"Product with sku {sku} deleted."}
-                    )
+                raise e
+            trigger_webhooks.send(f"Product with sku {sku} deleted.")
 
         return jsonify({"message": "Success"})
-
-    # @staticmethod
-    # def add_product_to_db(product):
-    #     try:
-    #         # TODO: First try finding matching record.
-
-    #         # If not exists, then add the record
-    #         db.session.add(product)
-    #         db.session.commit()
-    #         return True
-
-    #         # TODO: If exists, update the record
-    #     except sqlalchemy.exc.IntegrityError as e:
-    #         db.session.rollback()
-    #         return False

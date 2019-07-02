@@ -1,11 +1,16 @@
-from flask_sqlalchemy import SQLAlchemy
-import pymysql
 import os
+
+import pymysql
+from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
 
-def get_connection():
+def get_connection() -> pymysql.connections.Connection:
+    """
+    This function is used to obtain a connection to the Database
+    :return: pymysql connection
+    """
     return pymysql.connect(
         user=os.environ["DB_USERNAME"],
         password=os.environ["DB_PASSWORD"],

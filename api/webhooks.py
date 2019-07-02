@@ -1,17 +1,19 @@
-import csv
-import io
-
-import pymysql
-import sqlalchemy
-from flask import request, jsonify
-from flask_restful import Api, Resource
-
-
-from models import Webhook, db, get_connection
+from flask import request
+from flask_restful import Resource
+from models import Webhook, get_connection
 
 
 class WebhookResource(Resource):
-    def get(self):
+    """
+    This Resource is used for managing the Webhooks.
+    """
+
+    @staticmethod
+    def get():
+        """
+        The GET method returns a list of all existing webhooks from the database.
+        :return: return_json: A list of webhooks
+        """
         webhooks = Webhook.query.all()
         return_json = []
         for item in webhooks:
@@ -19,7 +21,11 @@ class WebhookResource(Resource):
 
         return return_json
 
-    def post(self):
+    @staticmethod
+    def post():
+        """
+        The POST method is used to insert/update a webhook in the database..
+        """
         request_body = request.json
         connection = get_connection()
 
@@ -35,12 +41,16 @@ class WebhookResource(Resource):
             cursor.execute(sql_statement, params)
             connection.commit()
         except Exception as e:
-            pass
+            raise e
         connection.close()
 
-    def delete(self, id):
+    @staticmethod
+    def delete(id):
+        """
+        The DELETE method is used to delete a webhook from the database..
+        :return: return_json: A list of webhooks
+        """
         connection = get_connection()
-
         cursor = connection.cursor()
         sql_statement = """
         DELETE FROM webhook
@@ -51,5 +61,5 @@ class WebhookResource(Resource):
             cursor.execute(sql_statement, params)
             connection.commit()
         except Exception as e:
-            pass
+            raise e
         connection.close()
