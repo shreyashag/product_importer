@@ -43,7 +43,7 @@ class ProductResource(Resource):
         """
         POST method is used for creating/updating the product records.
         If sku is none, then assumes that a CSV file with records is present in the request body.
-        If sku is given tries to create/update a record with the given sku.
+        If sku is given tries to Update a record with the given sku.
         :param sku:
         :return:
         """
@@ -99,9 +99,14 @@ class ProductResource(Resource):
         request_body = request.json
         connection = get_connection()
         name = str(request_body["name"]).strip()
-        active = str(request_body["active"]).strip()
+        active = bool(str(request_body["active"]).strip())
         description = str(request_body["description"]).strip()
         sku = str(request_body["sku"]).strip()
+
+        if active is True:
+            active = 1
+        elif active is False:
+            active = 0
 
         cursor = connection.cursor()
         sql_statement = """
